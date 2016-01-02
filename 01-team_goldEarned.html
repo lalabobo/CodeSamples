@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Test</title>
+        <script type="text/javascript" src="lib/d3/d3.js"></script>
+        <link href="css/nv.d3.css" rel="stylesheet">
+        <script src="js/nv.d3.js"></script>
+        
+        <style type="text/css">
+        /* put in css code here */
+        #chart {
+          height: 400px;
+          width: 600px;
+        }
+
+        .nv-series-1 path,
+        .nv-series-2 path {
+          stroke-width: 10px !important;
+          stroke-opacity: 1 !important;
+        }
+        </style>
+    </head>
+    <body>
+      <div id="chart">
+        <svg class="main"></svg>
+      </div>
+      
+       <script type="text/javascript">
+      /*These lines are all chart setup.  Pick and choose which chart features you want to utilize. */
+        
+          nv.addGraph(function() {
+            var chart = nv.models.lineChart()
+                          .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+                         // .transitionDuration(350)  //how fast do you want the lines to transition?
+                          .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+                          .showYAxis(true)        //Show the y-axis
+                          .showXAxis(true)        //Show the x-axis
+                          .tooltips(true)
+                          .tooltipContent(function(data) {
+                            return '<p> Gold earned: ' + Math.round(data.point.x,0) + '</p>' +
+                                    '<p> Win rate: ' + Math.round((data.point.y*100),2) + '%</p>' +
+                                    '<p> Better than <strong>' + Math.round(data.point.p,2) + '</strong>% of games</p>';
+                          })
+            ;
+          
+            chart.xAxis     //Chart x-axis settings
+                .axisLabel('Average Gold Earned per Minute')
+                .tickFormat(d3.format(',r'));
+          
+            chart.yAxis     //Chart y-axis settings
+                .axisLabel('Probability of Winning a game (win rate)')
+                .tickFormat(d3.format('0%'));
+          
+            /* Done setting the chart up? Time to render it!*/
+            // load the json data. It has to wrap everything that uses the data
+           d3.json("http://felicity.v1.pe/generated/chartJSON/data/goldEarned.json",function(d){
+            var avg_winrate = [];
+            var your_avg = [];
+            var opponent_avg = [];
+            var yourTeam = 1627.12    // this is from the database
+            var opponentTeam = 1247   // this is from the database
+            for (var x=0; x<d.length; x++) {  // start from index 0
+              var z = d[x];   // each unit in the json file
+              var p = 0;      // use to accmulate vol percentage
+              p = p + z.volPercent;
+              
+              // find the nearest point for yourTeam and opponentTeam avg
+              if (x==0) {  // when actuals <= the smallest avg
+                if (yourTeam<=z.avg) {
+                  your_avg = [{x:z.avg,y:z.winrate,p:p*100}];
+                }
+                if (opponentTeam<=z.avg) {
+                  opponent_avg = [{x:z.avg,y:z.winrate,p:p*100}];
+                }
+              }
+              else {
+                if (yourTeam>z.avg) {
+                  your_avg = [{x:z.avg,y:z.winrate,p:p*100}];
+                }
+                if (opponentTeam>z.avg) {
+                  opponent_avg = [{x:z.avg,y:z.winrate,p:p*100}];
+                }
+              };
+              
+              avg_winrate.push({x:Math.round(z.avg,0), y:z.winrate, p:p*100});
+
+            }
+            
+            // point colour depending on the win or lose
+            var yourWin = 1   // this is from the database
+            var yourColor = 'a'  
+            var opponentColor = 'a'
+            if (yourWin == 1) {
+              yourColor = '#0A85FF';
+              opponentColor = '#CC0000';
+            }
+            else {
+              yourColor = '#CC0000';
+              opponentColor = '#0A85FF';
+            }
+            
+            var data = [
+              {
+                values: avg_winrate,      //values - represents the array of {x,y} data points
+                key: 'Gold Earned per Minute', //key  - the name of the series.
+                color: '#ff7f0e'  //color - optional: choose your own line color.
+              },
+              {
+                values: your_avg,      //values - represents the array of {x,y} data points
+                key: 'Gold Your Team Earned', //key  - the name of the series.
+                color: yourColor  //color - optional: choose your own line color.
+              },
+              {
+                values: opponent_avg,      //values - represents the array of {x,y} data points
+                key: 'Gold Opponent Team Earned', //key  - the name of the series.
+                color: opponentColor  //color - optional: choose your own line color.
+              }
+            ];
+            d3.select('#chart svg')    //Select the <svg> element you want to render the chart in.   
+                .datum(data)         //Populate the <svg> element with chart data...
+                .call(chart);          //Finally, render the chart!
+           });
+            //Update the chart when window resizes.
+            nv.utils.windowResize(function() { chart.update() });
+            return chart;
+          });
+
+
+       </script>
+    </body>
+</html>
