@@ -12,13 +12,14 @@ timelineToParticipant<-function(startRank,batchSize,nameDate)
 	con<-dbConnect(MySQL(),user='hanmei',password='3322439',db='lol',host='127.0.0.1')
 	batchTable<-dbGetQuery(con,paste0("select * from lol.timeline_event_join_",nameDate,"_ranked where `rank` between ",startRank," and ",startRank+batchSize-1))
 	
-	batchTable<-batchTable[-c(79,16)]	# remove Num_SkillLevelUp and itemId
+	batchTable<-batchTable[!names(batchTable) %in% c("itemId")]	# remove itemId
 	DT<-data.table(batchTable)
 
 # frame=1 means min=0
 # here we only look at the first 20min with 2min interval
 transposeTable<-data.frame(gameId=NA,version=NA,participantId=NA,rank=NA,win=NA,
-				  gameMinutes=NA,gameMode=NA,gameType=NA,seasonId=NA,championId=NA,spell1Id=NA,spell2Id=NA,
+				  gameCount=NA,gameMinutes=NA,gameMode=NA,gameType=NA,mapId=NA
+				  ,seasonId=NA,championId=NA,spell1Id=NA,spell2Id=NA,
 				  highestAchievedSeasonTier=NA,role=NA,lane=NA
 				  ,masteryId1=NA,mrank1=NA,masteryId2=NA,mrank2=NA,masteryId3=NA,mrank3=NA
 				  ,masteryId4=NA,mrank4=NA,masteryId5=NA,mrank5=NA,masteryId6=NA,mrank6=NA
@@ -31,29 +32,30 @@ transposeTable<-data.frame(gameId=NA,version=NA,participantId=NA,rank=NA,win=NA,
 				  ,runeId4=NA,rrank4=NA,runeId5=NA,rrank5=NA,runeId6=NA,rrank6=NA
 				  ,runeId7=NA,rrank7=NA,runeId8=NA,rrank8=NA,runeId9=NA,rrank9=NA
 				  ,runeId10=NA,rrank10=NA,
+				  
 				  Num_ItemPurchased_3=NA,Num_ItemPurchased_5=NA,
 				  Num_ItemPurchased_7=NA,Num_ItemPurchased_9=NA,Num_ItemPurchased_11=NA,Num_ItemPurchased_13=NA,
 				  Num_ItemPurchased_15=NA,Num_ItemPurchased_17=NA,Num_ItemPurchased_19=NA,Num_ItemPurchased_21=NA,
 				  Num_ItemSold_3=NA,Num_ItemSold_5=NA,
 				  Num_ItemSold_7=NA,Num_ItemSold_9=NA,Num_ItemSold_11=NA,Num_ItemSold_13=NA,
 				  Num_ItemSold_15=NA,Num_ItemSold_17=NA,Num_ItemSold_19=NA,Num_ItemSold_21=NA,
-				  Num_ChampKilled_3=NA,Num_ChampKilled_5=NA,Num_ChampKilled_7=NA,Num_ChampKilled_9=NA,
-				  Num_ChampKilled_11=NA,Num_ChampKilled_13=NA,Num_ChampKilled_15=NA,Num_ChampKilled_17=NA,
-				  Num_ChampKilled_19=NA,Num_ChampKilled_21=NA,Num_MonsterKilled_3=NA,Num_MonsterKilled_5=NA,
+				  Num_MonsterKilled_3=NA,Num_MonsterKilled_5=NA,
 				  Num_MonsterKilled_7=NA,Num_MonsterKilled_9=NA,Num_MonsterKilled_11=NA,Num_MonsterKilled_13=NA,
 				  Num_MonsterKilled_15=NA,Num_MonsterKilled_17=NA,Num_MonsterKilled_19=NA,Num_MonsterKilled_21=NA,
-				  Num_Building_Killed_3=NA,Num_Building_Killed_5=NA,
-				  Num_Building_Killed_7=NA,Num_Building_Killed_9=NA,Num_Building_Killed_11=NA,Num_Building_Killed_13=NA,
-				  Num_Building_Killed_15=NA,Num_Building_Killed_17=NA,Num_Building_Killed_19=NA,Num_Building_Killed_21=NA,				  
+				  Num_Ward_Killed_3=NA,Num_Ward_Killed_5=NA,Num_Ward_Killed_7=NA,Num_Ward_Killed_9=NA,
+				  Num_Ward_Killed_11=NA,Num_Ward_Killed_13=NA,Num_Ward_Killed_15=NA,Num_Ward_Killed_17=NA,
+				  Num_Ward_Killed_19=NA,Num_Ward_Killed_21=NA,
+				  Num_Ward_Place_3=NA,Num_Ward_Place_5=NA,Num_Ward_Place_7=NA,Num_Ward_Place_9=NA,
+				  Num_Ward_Place_11=NA,Num_Ward_Place_13=NA,Num_Ward_Place_15=NA,Num_Ward_Place_17=NA,
+				  Num_Ward_Place_19=NA,Num_Ward_Place_21=NA,
+				  Num_Killedbld_3=NA,Num_Killedbld_5=NA,Num_Killedbld_7=NA,Num_Killedbld_9=NA,Num_Killedbld_11=NA,
+				  Num_Killedbld_13=NA, Num_Killedbld_15=NA,Num_Killedbld_17=NA,Num_Killedbld_19=NA,Num_Killedbld_21=NA,
+				  Num_KilleDchamp_3=NA,Num_KilleDchamp_5=NA,Num_KilleDchamp_7=NA,Num_KilleDchamp_9=NA,
+				  Num_KilleDchamp_11=NA,Num_KilleDchamp_13=NA,Num_KilleDchamp_15=NA,Num_KilleDchamp_17=NA,
+				  Num_KilleDchamp_19=NA,Num_KilleDchamp_21=NA,
 				  Num_Assisting_Player_3=NA,Num_Assisting_Player_5=NA,Num_Assisting_Player_7=NA,Num_Assisting_Player_9=NA,
 				  Num_Assisting_Player_11=NA,Num_Assisting_Player_13=NA,Num_Assisting_Player_15=NA,Num_Assisting_Player_17=NA,
-				  Num_Assisting_Player_19=NA,Num_Assisting_Player_21=NA,KilledByPlayer_3=NA,KilledByPlayer_5=NA,
-				  KilledByPlayer_7=NA,KilledByPlayer_9=NA,KilledByPlayer_11=NA,KilledByPlayer_13=NA,KilledByPlayer_15=NA,
-				  KilledByPlayer_17=NA,KilledByPlayer_19=NA,KilledByPlayer_21=NA,Num_Victim_3=NA,Num_Victim_5=NA,
-				  Num_Victim_7=NA,Num_Victim_9=NA,Num_Victim_11=NA,Num_Victim_13=NA,Num_Victim_15=NA,Num_Victim_17=NA,
-				  Num_Victim_19=NA,Num_Victim_21=NA,Num_Ward_Used_3=NA,Num_Ward_Used_5=NA,Num_Ward_Used_7=NA,Num_Ward_Used_9=NA,
-				  Num_Ward_Used_11=NA,Num_Ward_Used_13=NA,Num_Ward_Used_15=NA,Num_Ward_Used_17=NA,
-				  Num_Ward_Used_19=NA,Num_Ward_Used_21=NA,
+				  Num_Assisting_Player_19=NA,Num_Assisting_Player_21=NA,
 				  skillSlot1_3=NA,skillSlot1_5=NA,skillSlot1_7=NA,skillSlot1_9=NA,
 				  skillSlot1_11=NA,skillSlot1_13=NA,skillSlot1_15=NA,skillSlot1_17=NA,skillSlot1_19=NA,skillSlot1_21=NA,
 				  skillSlot2_3=NA,skillSlot2_5=NA,skillSlot2_7=NA,skillSlot2_9=NA,
@@ -74,7 +76,16 @@ transposeTable<-data.frame(gameId=NA,version=NA,participantId=NA,rank=NA,win=NA,
 				  goldSpent_15=NA,goldSpent_17=NA,goldSpent_19=NA,goldSpent_21=NA,goldRecoup_3=NA,goldRecoup_5=NA,goldRecoup_7=NA,
 				  goldRecoup_9=NA,goldRecoup_11=NA,goldRecoup_13=NA,goldRecoup_15=NA,goldRecoup_17=NA,goldRecoup_19=NA,goldRecoup_21=NA,
 				  num_consumed_3=NA,num_consumed_5=NA,num_consumed_7=NA,num_consumed_9=NA,num_consumed_11=NA,num_consumed_13=NA,num_consumed_15=NA,
-				  num_consumed_17=NA,num_consumed_19=NA,num_consumed_21=NA,tags_Active_3=NA,tags_Active_5=NA,tags_Active_7=NA,tags_Active_9=NA,
+				  num_consumed_17=NA,num_consumed_19=NA,num_consumed_21=NA,
+				   Num_AssistBld_3=NA,Num_AssistBld_5=NA,Num_AssistBld_7=NA,Num_AssistBld_9=NA,Num_AssistBld_11=NA,
+				  Num_AssistBld_13=NA,Num_AssistBld_15=NA,Num_AssistBld_17=NA,Num_AssistBld_19=NA,Num_AssistBld_21=NA,
+				  Num_AssistChamp_3=NA,Num_AssistChamp_5=NA,Num_AssistChamp_7=NA,Num_AssistChamp_9=NA,
+				  Num_AssistChamp_11=NA,Num_AssistChamp_13=NA,Num_AssistChamp_15=NA,Num_AssistChamp_17=NA,
+				  Num_AssistChamp_19=NA,Num_AssistChamp_21=NA,
+				  Num_deaths_3=NA,Num_deaths_5=NA,Num_deaths_7=NA,Num_deaths_9=NA,Num_deaths_11=NA,
+				  Num_deaths_13=NA,Num_deaths_15=NA,Num_deaths_17=NA,Num_deaths_19=NA,Num_deaths_21=NA,
+				 
+				  tags_Active_3=NA,tags_Active_5=NA,tags_Active_7=NA,tags_Active_9=NA,
 				  tags_Active_11=NA,tags_Active_13=NA,tags_Active_15=NA,tags_Active_17=NA,tags_Active_19=NA,tags_Active_21=NA,tags_Armor_3=NA,
 				  tags_Armor_5=NA,tags_Armor_7=NA,tags_Armor_9=NA,tags_Armor_11=NA,tags_Armor_13=NA,tags_Armor_15=NA,tags_Armor_17=NA,tags_Armor_19=NA,
 				  tags_Armor_21=NA,tags_ArmorPenetration_3=NA,tags_ArmorPenetration_5=NA,tags_ArmorPenetration_7=NA,tags_ArmorPenetration_9=NA,
@@ -145,8 +156,7 @@ transposeTable<-data.frame(gameId=NA,version=NA,participantId=NA,rank=NA,win=NA,
 , xp_3=NA, xp_5=NA, xp_7=NA, xp_9=NA, xp_11=NA, xp_13=NA, xp_15=NA, xp_17=NA, xp_19=NA, xp_21=NA
 , minionsKilled_3=NA, minionsKilled_5=NA, minionsKilled_7=NA, minionsKilled_9=NA, minionsKilled_11=NA, minionsKilled_13=NA, minionsKilled_15=NA, minionsKilled_17=NA, minionsKilled_19=NA, minionsKilled_21=NA
 , jungleMinionsKilled_3=NA, jungleMinionsKilled_5=NA, jungleMinionsKilled_7=NA, jungleMinionsKilled_9=NA, jungleMinionsKilled_11=NA, jungleMinionsKilled_13=NA, jungleMinionsKilled_15=NA, jungleMinionsKilled_17=NA, jungleMinionsKilled_19=NA, jungleMinionsKilled_21=NA
-, dominionScore_3=NA, dominionScore_5=NA, dominionScore_7=NA, dominionScore_9=NA, dominionScore_11=NA, dominionScore_13=NA, dominionScore_15=NA, dominionScore_17=NA, dominionScore_19=NA, dominionScore_21=NA
-, teamScore_3=NA, teamScore_5=NA, teamScore_7=NA, teamScore_9=NA, teamScore_11=NA, teamScore_13=NA, teamScore_15=NA, teamScore_17=NA, teamScore_19=NA, teamScore_21=NA)
+)
 
 j<-startRank 	# rank pointer also row number in the new table
 b<-0 	# carry on the row number
@@ -157,95 +167,97 @@ for (j in startRank:(startRank+batchSize-1))
 		for (x in 1:DT[DT$rank==j,max(participantId)])
 		#for (x in 1:1)
 			{
+				perGame<-DT[DT$rank==j]
+				perPar<-DT[DT$rank==j&DT$participantId==x]
 				# gameId level columns
-				transposeTable[b+x,1]<-DT[DT$rank==j,max(gameId,na.rm=TRUE)] 	# gameId
-				transposeTable[b+x,2]<-DT[DT$rank==j,max(version,na.rm=TRUE)]  	# version
+				transposeTable[b+x,1]<-perGame[,max(gameId,na.rm=TRUE)] 	# gameId
+				transposeTable[b+x,2]<-perGame[,max(version,na.rm=TRUE)]  	# version
 				transposeTable[b+x,3]<-x 		# participantId
 				transposeTable[b+x,4]<-j 		# rank
-				transposeTable[b+x,5]<-DT[DT$rank==j&DT$participantId==x,max(win,na.rm=TRUE)] # win
-				transposeTable[b+x,6]<-DT[DT$rank==j,max(gameMinutes,na.rm=TRUE)] # gameMinutes
-				transposeTable[b+x,7]<-DT[DT$rank==j,max(gameMode,na.rm=TRUE)] # gameMode
-				transposeTable[b+x,8]<-DT[DT$rank==j,max(gameType,na.rm=TRUE)] # gameType
-				transposeTable[b+x,9]<-DT[DT$rank==j,max(seasonId,na.rm=TRUE)] # seasonId
+				transposeTable[b+x,5]<-perPar[,max(win,na.rm=TRUE)] # win
+				transposeTable[b+x,6]<-perPar[,max(gameCount,na.rm=TRUE)]  # gameCount
+				transposeTable[b+x,7]<-perGame[,max(gameMinutes,na.rm=TRUE)] # gameMinutes
+				transposeTable[b+x,8]<-perGame[,max(gameMode,na.rm=TRUE)] # gameMode
+				transposeTable[b+x,9]<-perGame[,max(gameType,na.rm=TRUE)] # gameType
+				transposeTable[b+x,10]<-perGame[,max(mapId,na.rm=TRUE)] # mapId
+				transposeTable[b+x,11]<-perGame[,max(seasonId,na.rm=TRUE)] # seasonId
+				
 				# participantId level columns
-				transposeTable[b+x,10]<-DT[DT$rank==j&DT$participantId==x,max(championId,na.rm=TRUE)] 	# championId
-				transposeTable[b+x,11]<-DT[DT$rank==j&DT$participantId==x,max(spell1Id,na.rm=TRUE)] 	# spell1Id
-				transposeTable[b+x,12]<-DT[DT$rank==j&DT$participantId==x,max(spell2Id,na.rm=TRUE)] 	# spell2Id
-				transposeTable[b+x,13]<-DT[DT$rank==j&DT$participantId==x,max(highestAchievedSeasonTier,na.rm=TRUE)] 	# highestAchievedSeasonTier
-				transposeTable[b+x,14]<-DT[DT$rank==j&DT$participantId==x,max(role,na.rm=TRUE)] 	# role
-				transposeTable[b+x,15]<-DT[DT$rank==j&DT$participantId==x,max(lane,na.rm=TRUE)]  	# lane
-				transposeTable[b+x,16]<-DT[DT$rank==j&DT$participantId==x,max(masteryId1,na.rm=TRUE)]     #  masteryId1
-				transposeTable[b+x,17]<-DT[DT$rank==j&DT$participantId==x,max(mrank1,na.rm=TRUE)]     #  mrank1
-				transposeTable[b+x,18]<-DT[DT$rank==j&DT$participantId==x,max(masteryId2,na.rm=TRUE)]     #  masteryId2
-				transposeTable[b+x,19]<-DT[DT$rank==j&DT$participantId==x,max(mrank2,na.rm=TRUE)]     #  mrank2
-				transposeTable[b+x,20]<-DT[DT$rank==j&DT$participantId==x,max(masteryId3,na.rm=TRUE)]     #  masteryId3
-				transposeTable[b+x,21]<-DT[DT$rank==j&DT$participantId==x,max(mrank3,na.rm=TRUE)]     #  mrank3
-				transposeTable[b+x,22]<-DT[DT$rank==j&DT$participantId==x,max(masteryId4,na.rm=TRUE)]     #  masteryId4
-				transposeTable[b+x,23]<-DT[DT$rank==j&DT$participantId==x,max(mrank4,na.rm=TRUE)]     #  mrank4
-				transposeTable[b+x,24]<-DT[DT$rank==j&DT$participantId==x,max(masteryId5,na.rm=TRUE)]     #  masteryId5
-				transposeTable[b+x,25]<-DT[DT$rank==j&DT$participantId==x,max(mrank5,na.rm=TRUE)]     #  mrank5
-				transposeTable[b+x,26]<-DT[DT$rank==j&DT$participantId==x,max(masteryId6,na.rm=TRUE)]     #  masteryId6
-				transposeTable[b+x,27]<-DT[DT$rank==j&DT$participantId==x,max(mrank6,na.rm=TRUE)]     #  mrank6
-				transposeTable[b+x,28]<-DT[DT$rank==j&DT$participantId==x,max(masteryId7,na.rm=TRUE)]     #  masteryId7
-				transposeTable[b+x,29]<-DT[DT$rank==j&DT$participantId==x,max(mrank7,na.rm=TRUE)]     #  mrank7
-				transposeTable[b+x,30]<-DT[DT$rank==j&DT$participantId==x,max(masteryId8,na.rm=TRUE)]     #  masteryId8
-				transposeTable[b+x,31]<-DT[DT$rank==j&DT$participantId==x,max(mrank8,na.rm=TRUE)]     #  mrank8
-				transposeTable[b+x,32]<-DT[DT$rank==j&DT$participantId==x,max(masteryId9,na.rm=TRUE)]     #  masteryId9
-				transposeTable[b+x,33]<-DT[DT$rank==j&DT$participantId==x,max(mrank9,na.rm=TRUE)]     #  mrank9
-				transposeTable[b+x,34]<-DT[DT$rank==j&DT$participantId==x,max(masteryId10,na.rm=TRUE)]     #  masteryId10
-				transposeTable[b+x,35]<-DT[DT$rank==j&DT$participantId==x,max(mrank10,na.rm=TRUE)]     #  mrank10
-				transposeTable[b+x,36]<-DT[DT$rank==j&DT$participantId==x,max(masteryId11,na.rm=TRUE)]     #  masteryId11
-				transposeTable[b+x,37]<-DT[DT$rank==j&DT$participantId==x,max(mrank11,na.rm=TRUE)]     #  mrank11
-				transposeTable[b+x,38]<-DT[DT$rank==j&DT$participantId==x,max(masteryId12,na.rm=TRUE)]     #  masteryId12
-				transposeTable[b+x,39]<-DT[DT$rank==j&DT$participantId==x,max(mrank12,na.rm=TRUE)]     #  mrank12
-				transposeTable[b+x,40]<-DT[DT$rank==j&DT$participantId==x,max(masteryId13,na.rm=TRUE)]     #  masteryId13
-				transposeTable[b+x,41]<-DT[DT$rank==j&DT$participantId==x,max(mrank13,na.rm=TRUE)]     #  mrank13
-				transposeTable[b+x,42]<-DT[DT$rank==j&DT$participantId==x,max(masteryId14,na.rm=TRUE)]     #  masteryId14
-				transposeTable[b+x,43]<-DT[DT$rank==j&DT$participantId==x,max(mrank14,na.rm=TRUE)]     #  mrank14
-				transposeTable[b+x,44]<-DT[DT$rank==j&DT$participantId==x,max(masteryId15,na.rm=TRUE)]     #  masteryId15
-				transposeTable[b+x,45]<-DT[DT$rank==j&DT$participantId==x,max(mrank15,na.rm=TRUE)]     #  mrank15
-				transposeTable[b+x,46]<-DT[DT$rank==j&DT$participantId==x,max(masteryId16,na.rm=TRUE)]     #  masteryId16
-				transposeTable[b+x,47]<-DT[DT$rank==j&DT$participantId==x,max(mrank16,na.rm=TRUE)]     #  mrank16
-				transposeTable[b+x,48]<-DT[DT$rank==j&DT$participantId==x,max(masteryId17,na.rm=TRUE)]     #  masteryId17
-				transposeTable[b+x,49]<-DT[DT$rank==j&DT$participantId==x,max(mrank17,na.rm=TRUE)]     #  mrank17
-				transposeTable[b+x,50]<-DT[DT$rank==j&DT$participantId==x,max(masteryId18,na.rm=TRUE)]     #  masteryId18
-				transposeTable[b+x,51]<-DT[DT$rank==j&DT$participantId==x,max(mrank18,na.rm=TRUE)]     #  mrank18
-				transposeTable[b+x,52]<-DT[DT$rank==j&DT$participantId==x,max(masteryId19,na.rm=TRUE)]     #  masteryId19
-				transposeTable[b+x,53]<-DT[DT$rank==j&DT$participantId==x,max(mrank19,na.rm=TRUE)]     #  mrank19
-				transposeTable[b+x,54]<-DT[DT$rank==j&DT$participantId==x,max(masteryId20,na.rm=TRUE)]     #  masteryId20
-				transposeTable[b+x,55]<-DT[DT$rank==j&DT$participantId==x,max(mrank20,na.rm=TRUE)]     #  mrank20
-				transposeTable[b+x,56]<-DT[DT$rank==j&DT$participantId==x,max(runeId1,na.rm=TRUE)]     #  runeId1
-				transposeTable[b+x,57]<-DT[DT$rank==j&DT$participantId==x,max(rrank1,na.rm=TRUE)]     #  rrank1
-				transposeTable[b+x,58]<-DT[DT$rank==j&DT$participantId==x,max(runeId2,na.rm=TRUE)]     #  runeId2
-				transposeTable[b+x,59]<-DT[DT$rank==j&DT$participantId==x,max(rrank2,na.rm=TRUE)]     #  rrank2
-				transposeTable[b+x,60]<-DT[DT$rank==j&DT$participantId==x,max(runeId3,na.rm=TRUE)]     #  runeId3
-				transposeTable[b+x,61]<-DT[DT$rank==j&DT$participantId==x,max(rrank3,na.rm=TRUE)]     #  rrank3
-				transposeTable[b+x,62]<-DT[DT$rank==j&DT$participantId==x,max(runeId4,na.rm=TRUE)]     #  runeId4
-				transposeTable[b+x,63]<-DT[DT$rank==j&DT$participantId==x,max(rrank4,na.rm=TRUE)]     #  rrank4
-				transposeTable[b+x,64]<-DT[DT$rank==j&DT$participantId==x,max(runeId5,na.rm=TRUE)]     #  runeId5
-				transposeTable[b+x,65]<-DT[DT$rank==j&DT$participantId==x,max(rrank5,na.rm=TRUE)]     #  rrank5
-				transposeTable[b+x,66]<-DT[DT$rank==j&DT$participantId==x,max(runeId6,na.rm=TRUE)]     #  runeId6
-				transposeTable[b+x,67]<-DT[DT$rank==j&DT$participantId==x,max(rrank6,na.rm=TRUE)]     #  rrank6
-				transposeTable[b+x,68]<-DT[DT$rank==j&DT$participantId==x,max(runeId7,na.rm=TRUE)]     #  runeId7
-				transposeTable[b+x,69]<-DT[DT$rank==j&DT$participantId==x,max(rrank7,na.rm=TRUE)]     #  rrank7
-				transposeTable[b+x,70]<-DT[DT$rank==j&DT$participantId==x,max(runeId8,na.rm=TRUE)]     #  runeId8
-				transposeTable[b+x,71]<-DT[DT$rank==j&DT$participantId==x,max(rrank8,na.rm=TRUE)]     #  rrank8
-				transposeTable[b+x,72]<-DT[DT$rank==j&DT$participantId==x,max(runeId9,na.rm=TRUE)]     #  runeId9
-				transposeTable[b+x,73]<-DT[DT$rank==j&DT$participantId==x,max(rrank9,na.rm=TRUE)]     #  rrank9
-				transposeTable[b+x,74]<-DT[DT$rank==j&DT$participantId==x,max(runeId10,na.rm=TRUE)]     #  runeId10
-				transposeTable[b+x,75]<-DT[DT$rank==j&DT$participantId==x,max(rrank10,na.rm=TRUE)]     #  rrank10
+				transposeTable[b+x,12]<-perPar[,max(championId,na.rm=TRUE)] 	# championId
+				transposeTable[b+x,13]<-perPar[,max(spell1Id,na.rm=TRUE)] 	# spell1Id
+				transposeTable[b+x,14]<-perPar[,max(spell2Id,na.rm=TRUE)] 	# spell2Id
+				transposeTable[b+x,15]<-perPar[,max(highestAchievedSeasonTier,na.rm=TRUE)] 	# highestAchievedSeasonTier
+				transposeTable[b+x,16]<-perPar[,max(role,na.rm=TRUE)] 	# role
+				transposeTable[b+x,17]<-perPar[,max(lane,na.rm=TRUE)]  	# lane
+				transposeTable[b+x,18]<-perPar[,max(masteryId1,na.rm=TRUE)]     #  masteryId1
+				transposeTable[b+x,19]<-perPar[,max(mrank1,na.rm=TRUE)]     #  mrank1
+				transposeTable[b+x,20]<-perPar[,max(masteryId2,na.rm=TRUE)]     #  masteryId2
+				transposeTable[b+x,21]<-perPar[,max(mrank2,na.rm=TRUE)]     #  mrank2
+				transposeTable[b+x,22]<-perPar[,max(masteryId3,na.rm=TRUE)]     #  masteryId3
+				transposeTable[b+x,23]<-perPar[,max(mrank3,na.rm=TRUE)]     #  mrank3
+				transposeTable[b+x,24]<-perPar[,max(masteryId4,na.rm=TRUE)]     #  masteryId4
+				transposeTable[b+x,25]<-perPar[,max(mrank4,na.rm=TRUE)]     #  mrank4
+				transposeTable[b+x,26]<-perPar[,max(masteryId5,na.rm=TRUE)]     #  masteryId5
+				transposeTable[b+x,27]<-perPar[,max(mrank5,na.rm=TRUE)]     #  mrank5
+				transposeTable[b+x,28]<-perPar[,max(masteryId6,na.rm=TRUE)]     #  masteryId6
+				transposeTable[b+x,29]<-perPar[,max(mrank6,na.rm=TRUE)]     #  mrank6
+				transposeTable[b+x,30]<-perPar[,max(masteryId7,na.rm=TRUE)]     #  masteryId7
+				transposeTable[b+x,31]<-perPar[,max(mrank7,na.rm=TRUE)]     #  mrank7
+				transposeTable[b+x,32]<-perPar[,max(masteryId8,na.rm=TRUE)]     #  masteryId8
+				transposeTable[b+x,33]<-perPar[,max(mrank8,na.rm=TRUE)]     #  mrank8
+				transposeTable[b+x,34]<-perPar[,max(masteryId9,na.rm=TRUE)]     #  masteryId9
+				transposeTable[b+x,35]<-perPar[,max(mrank9,na.rm=TRUE)]     #  mrank9
+				transposeTable[b+x,36]<-perPar[,max(masteryId10,na.rm=TRUE)]     #  masteryId10
+				transposeTable[b+x,37]<-perPar[,max(mrank10,na.rm=TRUE)]     #  mrank10
+				transposeTable[b+x,38]<-perPar[,max(masteryId11,na.rm=TRUE)]     #  masteryId11
+				transposeTable[b+x,39]<-perPar[,max(mrank11,na.rm=TRUE)]     #  mrank11
+				transposeTable[b+x,40]<-perPar[,max(masteryId12,na.rm=TRUE)]     #  masteryId12
+				transposeTable[b+x,41]<-perPar[,max(mrank12,na.rm=TRUE)]     #  mrank12
+				transposeTable[b+x,42]<-perPar[,max(masteryId13,na.rm=TRUE)]     #  masteryId13
+				transposeTable[b+x,43]<-perPar[,max(mrank13,na.rm=TRUE)]     #  mrank13
+				transposeTable[b+x,44]<-perPar[,max(masteryId14,na.rm=TRUE)]     #  masteryId14
+				transposeTable[b+x,45]<-perPar[,max(mrank14,na.rm=TRUE)]     #  mrank14
+				transposeTable[b+x,46]<-perPar[,max(masteryId15,na.rm=TRUE)]     #  masteryId15
+				transposeTable[b+x,47]<-perPar[,max(mrank15,na.rm=TRUE)]     #  mrank15
+				transposeTable[b+x,48]<-perPar[,max(masteryId16,na.rm=TRUE)]     #  masteryId16
+				transposeTable[b+x,49]<-perPar[,max(mrank16,na.rm=TRUE)]     #  mrank16
+				transposeTable[b+x,50]<-perPar[,max(masteryId17,na.rm=TRUE)]     #  masteryId17
+				transposeTable[b+x,51]<-perPar[,max(mrank17,na.rm=TRUE)]     #  mrank17
+				transposeTable[b+x,52]<-perPar[,max(masteryId18,na.rm=TRUE)]     #  masteryId18
+				transposeTable[b+x,53]<-perPar[,max(mrank18,na.rm=TRUE)]     #  mrank18
+				transposeTable[b+x,54]<-perPar[,max(masteryId19,na.rm=TRUE)]     #  masteryId19
+				transposeTable[b+x,55]<-perPar[,max(mrank19,na.rm=TRUE)]     #  mrank19
+				transposeTable[b+x,56]<-perPar[,max(masteryId20,na.rm=TRUE)]     #  masteryId20
+				transposeTable[b+x,57]<-perPar[,max(mrank20,na.rm=TRUE)]     #  mrank20
+				transposeTable[b+x,58]<-perPar[,max(runeId1,na.rm=TRUE)]     #  runeId1
+				transposeTable[b+x,59]<-perPar[,max(rrank1,na.rm=TRUE)]     #  rrank1
+				transposeTable[b+x,60]<-perPar[,max(runeId2,na.rm=TRUE)]     #  runeId2
+				transposeTable[b+x,61]<-perPar[,max(rrank2,na.rm=TRUE)]     #  rrank2
+				transposeTable[b+x,62]<-perPar[,max(runeId3,na.rm=TRUE)]     #  runeId3
+				transposeTable[b+x,63]<-perPar[,max(rrank3,na.rm=TRUE)]     #  rrank3
+				transposeTable[b+x,64]<-perPar[,max(runeId4,na.rm=TRUE)]     #  runeId4
+				transposeTable[b+x,65]<-perPar[,max(rrank4,na.rm=TRUE)]     #  rrank4
+				transposeTable[b+x,66]<-perPar[,max(runeId5,na.rm=TRUE)]     #  runeId5
+				transposeTable[b+x,67]<-perPar[,max(rrank5,na.rm=TRUE)]     #  rrank5
+				transposeTable[b+x,68]<-perPar[,max(runeId6,na.rm=TRUE)]     #  runeId6
+				transposeTable[b+x,69]<-perPar[,max(rrank6,na.rm=TRUE)]     #  rrank6
+				transposeTable[b+x,70]<-perPar[,max(runeId7,na.rm=TRUE)]     #  runeId7
+				transposeTable[b+x,71]<-perPar[,max(rrank7,na.rm=TRUE)]     #  rrank7
+				transposeTable[b+x,72]<-perPar[,max(runeId8,na.rm=TRUE)]     #  runeId8
+				transposeTable[b+x,73]<-perPar[,max(rrank8,na.rm=TRUE)]     #  rrank8
+				transposeTable[b+x,74]<-perPar[,max(runeId9,na.rm=TRUE)]     #  runeId9
+				transposeTable[b+x,75]<-perPar[,max(rrank9,na.rm=TRUE)]     #  rrank9
+				transposeTable[b+x,76]<-perPar[,max(runeId10,na.rm=TRUE)]     #  runeId10
+				transposeTable[b+x,77]<-perPar[,max(rrank10,na.rm=TRUE)]     #  rrank10
 
-
-			#	batchTable<-batchTable[-79]	# drop variable participantId
-
-				i<-76 	# column pointer - batchTable
+				i<-78 	# column pointer - batchTable
 
 				# populate each column
-				for (i in 76:(ncol(batchTable)-1)) # the batchTable. Don't count the last column rank.
+				for (i in 78:(ncol(batchTable)-1)) # the batchTable. Don't count the last column rank.
 			#	for (i in 4:4)
 				{
 					k<-3 	# frame pointer
-					a<-(i-76)*10+75	# column accumulator - transposeTable. Not all games last more than 21 frames
+					a<-(i-78)*10+77	# column accumulator - transposeTable. Not all games last more than 21 frames
 					
 					# aggregated each 2 frames of each participantId in a gameId
 					# we only look at <=20 frames
@@ -254,11 +266,11 @@ for (j in startRank:(startRank+batchSize-1))
 					#for (k in c(3:5:7))
 						{
 							colName<-colnames(batchTable)[i] # <- added 1 column in both batchTable and transposeTable. Need to adjust the numbers here
-							if (!(i %in% c(89:92,158:165)))	# those columns aggregated in other ways other than sum					
+							if (!(i %in% c(89:92,161:166)))	# those columns aggregated in other ways other than sum					
 								transposeTable[b+x,a+k%/%2]<-eval(parse(text=paste0("DT[DT$participantFrames>=",k-1,"&DT$participantFrames<=",k,"&DT$participantId==",x,"&DT$rank==",j,",","sum(as.numeric(",colName,"),na.rm=TRUE)]")))
-							if (i %in% c(159:165))  # level needs to take the max
+							if (i %in% c(162:166))  # level needs to take the max
 								transposeTable[b+x,a+k%/%2]<-eval(parse(text=paste0("DT[DT$participantFrames>=",k-1,"&DT$participantFrames<=",k,"&DT$participantId==",x,"&DT$rank==",j,",","max(as.numeric(",colName,"),na.rm=TRUE)]")))
-							if (i %in% c(89:92,158)) # need to be avg
+							if (i %in% c(89:92,161)) # need to be avg
 								transposeTable[b+x,a+k%/%2]<-eval(parse(text=paste0("DT[DT$participantFrames>=",k-1,"&DT$participantFrames<=",k,"&DT$participantId==",x,"&DT$rank==",j,",","mean(as.numeric(",colName,"),na.rm=TRUE)]")))
 						#	if (i %in% c(128,129,131,133,135,137,139,141,143,144,146,148,150,152,154,156,157)) 	# need to be multiplied
 						#		transposeTable[b+x,a+k%/%2]<-eval(parse(text=paste0("DT[DT$participantFrames>=",k-1,"&DT$participantFrames<=",k,"&DT$participantId==",x,"&DT$rank==",j,",","prod(as.numeric(",colName,"),na.rm=TRUE)]")))
@@ -275,15 +287,6 @@ print(paste0("Finished gameId rank from ",startRank," to ",startRank+batchSize-1
 }
 #timelineToParticipant(startRank,1)
 
-
-# read a sql file as a string
-read_sql<-function(path)
-{
-  if (file.exists(path))
-    sql<-readChar(path,nchar= file.info(path)$size)
-  else sql<-NA
-  return(sql)
-}
 
 # make sure the script can automatically run through multiple tables
 runMultiTables<-function()
@@ -336,6 +339,9 @@ runMultiTables<-function()
 	
 	}
 
-runMultiTables()
+time<-system.time(runMultiTables())
+
+
+
 
 
