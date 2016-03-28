@@ -189,55 +189,38 @@ xgbModel<-function(xgbData)
 polyTransform<-function(data)
 {
     # apply poly transforms
-        colNum<-ncol(data)
-        colName<-colnames(data)
+        predictors<-data[,-which(colnames(data) %in% "win")]
+        colNum<-ncol(predictors)
+        colName<-colnames(predictors)
         resp<-data$win
         rowNum<-nrow(data)
         #for (p in 1:6)
-        for (p in 1:colNum) # p is the pointer of column in the colName
+        for (p in seq_along(colName)) # p is the pointer of column in the colName
             {
                 d<-3 # target degree in poly
                 j<-1
-                if (p == 1)
+                
+                x<-predictors[,p]  # grab that column
+                # manually calculate steps in poly() as I keep running into "degree' must be less than number of unique points" error
+                # decide the appropriate degree based on the following steps
+                xbar<-mean(predictors[,p])
+                x<-x - xbar
+                X<-outer(x,0L:d,"^") # outer product with FUN = ^ 
+                QR<-qr(X)
+                t<-min(length(unique(x)),QR$rank)  # the threshold of degree
+                if (d >= t) # degree has to <length(unique(x) and <=QR$rank
+                    { d<-t-1 }
+                #else d<-3
+                
+                if (p == 1) { newData<-data.frame()} # initiate a newData DF
+                
+                tempPoly<-poly(x,d) # 'degree' must be less than number of unique points"
+                for (j in 1:d)  # j is the pointer of degree
                     {
-                        x<-data[,p]  # grab that column
-                             r<-mean(data[,2])
-                             data[,2]-xbar
-                        X<-outer(x,0L:3,"^")
-                        QR<-qr(X)
-                        t<-min(length(unique(x)),QR$rank)  # the threshold for degree 1
-                        if (d >= t) # checks performed in poly()
-                            { d<-t-1 }
-                        else d<-3
-
-                        newData<-data.frame()
-                        tempPoly<-poly(x,d) # 'degree' must be less than number of unique points"
-                        for (j in 1:d)  # j is the pointer of degree
-                            {
-                                newData[1:rowNum,paste0(colName[p],"_",j)]<-tempPoly[,j] # access each new column and copy into the newData
-                            }
+                        newData[1:rowNum,paste0(colName[p],"_",j)]<-tempPoly[,j] # access each new column and copy into the newData
                     }
-                else
-                    {
-                        x<-data[,p]  # grab that column
-                             r<-mean(data[,2])
-                             data[,2]-xbar
-                        X<-outer(x,0L:3,"^")
-                        QR<-qr(X)
-                        t<-min(length(unique(x)),QR$rank)  # the threshold for degree 1
-                        if (d >= t) # checks performed in poly()
-                           { d<-t-1 }
-                        else d<-3
 
-                        #if (p %in% c(9)) d<-1  # <-- I don't know why the 9th column doesn't work
-
-                        tempPoly<-poly(x,d) # 'degree' must be less than number of unique points"
-                        for (j in 1:d)  # j is the pointer of degree
-                            {
-                                newData[1:rowNum,paste0(colName[p],"_",j)]<-tempPoly[,j] # access each new column and copy into the newData
-                            }
-                    }
-                print(p)
+                print(paste0("Finished poly transform on the ",p,"th variable."))
                 p<-p+1
             }
     return(newData)
@@ -249,7 +232,7 @@ glmnetModel<-function(data)
     ret<-data.frame(alpha=NA,lambda.min=NA,MSE=NA,auc=NA)
 
     # apply poly transform to the dataset
-    #newData<-as.matrix(polyTransform(data[,-which(colnames(data) %in% "win")]))
+    newData<-as.matrix(polyTransform(data[,-which(colnames(data) %in% "win")]))
 
     newData<-as.matrix(data[,-which(colnames(data) %in% "win")])
 
@@ -473,7 +456,7 @@ for (i in seq(from = 3, to = 23, by = 2 ))  # i is the pointer in the byMinRet l
 
 # create a column of variable with the min# stripped out
 
-glmnet_coefs[,"variable_clean"]<-sub("(.*)_[0-9]+$","\\1",glmnet_coefs$variable)
+glmnet_coefs[,"variable_clean"]<-sub("(.*)_[0-9]+$","\\1",gsub("_capped","",glmnet_coefs$variable))
 # .: any character
 # *: any length
 # (): indicate extraction
@@ -490,6 +473,7 @@ variables<-c("totalGold","sum_level","minionsKilled","Num_Killedbld","jungleMini
 s<-"ggplot() + "
 for (i in seq_along(variables))
 {
+     # draw a line for each variable in the list
     l<-paste0("geom_line(data = filter(glmnet_coefs,variable_clean==variables[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables[",i,"]),size = 1) + ")
     s<-paste0(s,l)
 }    
@@ -504,11 +488,12 @@ dev.off()
 variables<-c("Champ_SpellBlockPerLevel","Champ_MPperLevel","Champ_HP","Champ_Attack","Champ_MP",
             "Champ_Magic","Champ_HPregenPerLevel","Champ_AttackDamage","Champ_AttackSpeedOffset",
             "Champ_MoveSpeed","Champ_HPregen","Champ_MPregen","Champ_AttackDamagePerLevel",
-            "parType_Wind","Champ_Armor","Champ_HPperLevel","Champ_Defense","Champ_MPregenPerLevel")
-#variables<-"Champ_MPperLevel"
+            "parType_Wind","Champ_Armor","Champ_HPperLevel","Champ_Defense","Champ_MPregenPerLevel","tags_Mage_Fighter")
+
 s<-"ggplot() + "
 for (i in seq_along(variables))
 {
+    # draw a line for each variable in the list
     l<-paste0("geom_line(data = filter(glmnet_coefs,variable_clean==variables[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables[",i,"]),size = 1) + ")
     s<-paste0(s,l)
 }    
@@ -519,9 +504,24 @@ g<-eval(parse(text = s))
 print(g)
 dev.off()
 
-
-
-  
+# build status
+variables<-c("FlatCritChanceMod","tags_CriticalStrike","FlatMagicDamageMod","FlatMovementSpeedMod"
+        ,"FlatPhysicalDamageMod","PercentSpellVampMod","FlatMPRegenMod","tags_Boots"
+        ,"FlatAttackSpeedMod","tags_SpellDamage","tags_SpellBlock","tags_GoldPer",
+        ,"FlatCritDamageMod","rFlatArmorPenetrationMod","tags_ArmorPenetration")
+ s<-"ggplot() + "
+for (i in seq_along(variables))
+{
+    # draw a line for each variable in the list
+    l<-paste0("geom_line(data = filter(glmnet_coefs,variable_clean==variables[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables[",i,"]),size = 1) + ")
+    s<-paste0(s,l)
+}    
+s<-paste0(s,"xlab(\"byMin\") +","ylab(\"rank\")")
+chartURL<-paste0("/src/lol/4-plot/glmnet_byMin_build.jpg") 
+jpeg(chartURL,height=400,width=600) 
+g<-eval(parse(text = s)) 
+print(g)
+dev.off() 
 
 # ------------------------- xgb importance ---------------------- <--------- not done
 j<-3 # calculate min
