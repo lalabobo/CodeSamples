@@ -10,6 +10,8 @@ library(doMC)
 registerDoMC(4)
 library(xgboost)
 library(glmnet)
+library(jsonlite)
+library(RJSONIO)
 
 
 # 0. read a sql file as a string
@@ -226,19 +228,29 @@ polyTransform<-function(data)
     return(newData)
 }
 
+# modified auc function
+auc_adj<-function(y, prob) 
+{
+    rprob = rank(prob)
+    n1 = sum(y)
+    n0 = length(y) - n1
+    u = sum(rprob[y == 1]) - n1 * (n1 + 1)/2
+    n1 = n1 + 0.0 # this changes n1 to float so n1 * n2 won't exceed the max length as int. float can take larger number.
+    u/(n1 * n0)
+}
 
 glmnetModel<-function(data)
   {
     ret<-data.frame(alpha=NA,lambda.min=NA,MSE=NA,auc=NA)
 
     # apply poly transform to the dataset
-    newData<-as.matrix(polyTransform(data[,-which(colnames(data) %in% "win")]))
+    newData<-as.matrix(polyTransform(data))
 
-    newData<-as.matrix(data[,-which(colnames(data) %in% "win")])
+    #newData<-as.matrix(data[,-which(colnames(data) %in% "win")])
 
 
     i<-1 # row pointer in ret
-    for (a in seq(from = 0.5, to = 1, by = 0.1))
+    for (a in seq(from = 0, to = 1, by = 0.1))
       {
         cvfit<-cv.glmnet(x = newData, y = data$win, alpha = a, family = "binomial"
                         , nfold = 10, type.measure = "mse", parallel = T)
@@ -252,7 +264,7 @@ glmnetModel<-function(data)
         ret[i,1]<-a
         ret[i,2]<-cvfit$lambda.min
         ret[i,3]<-mean((data$win-pred)^2)
-        ret[i,4]<-auc(data$win,as.vector(pred))[1]
+        ret[i,4]<-auc_adj(data$win,as.vector(pred))
         
         print(paste0("Finished a = ",a))
       i<-i+1
@@ -358,10 +370,11 @@ modelPerf<-function()
                      #glmnet_time<-system.time(glmnet_cv<-glmnetModel(glmnetData))
                      # in this case, alpha = 0.9 is the best
 
-                     glmnetX<-as.matrix(glmnetData[,-which(colnames(glmnetData) %in% "win")])
-
+                     #glmnetX<-as.matrix(glmnetData[,-which(colnames(glmnetData) %in% "win")])
+                     glmnetX<-newData<-as.matrix(polyTransform(data))    # use poly transform
+                        
                      glmnet_time<-system.time(glmnet_model<-glmnet(x = glmnetX, y = glmnetData$win,
-                            family = "binomial", alpha = 0.9))
+                            family = "binomial", alpha = 0.3))
 
                      pred<-predict(glmnet_model,newx = glmnetX,s= min(glmnet_model$lambda),type="response")
 
@@ -369,15 +382,7 @@ modelPerf<-function()
                      ret_model[j,1]<-ret_model[j-1,1]
                      ret_model[j,2]<-"glmnet"
                      ret_model[j,3]<-mean((data$win - pred)^2)
-                     #ret_model[j,4]<-auc(data$win,as.vector(pred))[1] # the original formula will have "In n1 * n0 : NAs produced by integer overflow"
-                     
-                     # modified auc
-                     rprob <- rank(pred)
-                     n1 <- sum(data$win)+0.0  # change to float rather than integer as .Machine$integer.max < the original n1 * n0
-                     n0 <- length(data$win) - n1
-                     u <- sum(rprob[data$win == 1]) - n1 * (n1 + 1)/2
-                     
-                     ret_model[j,4]<-u/(n1 * n0)
+                     ret_model[j,4]<-auc_adj(data$win,as.vector(pred))[1] # the original formula will have "In n1 * n0 : NAs produced by integer overflow"
                      ret_model[j,5]<-glmnet_time[[1]] # user time
                      ret_model[j,6]<-glmnet_time[[2]] # system time
                      ret_model[j,7]<-glmnet_time[[3]] # elapsed time
@@ -464,6 +469,11 @@ glmnet_coefs[,"variable_clean"]<-sub("(.*)_[0-9]+$","\\1",gsub("_capped","",glmn
 # +: repeat the type of character in front of it. Here is to repeat number/digit
 # $: till the end of the string
 # \\n: indicate which extraction to take. Here we grab the first extraction in ()
+
+# create a json file
+b<-jsonlite::toJSON(glmnet_coefs)  # ret[[1]] is the variable names (repeat)
+saveURL<-paste0("/usr/share/nginx/html/generated/chartJSON/data/game/glmnet_coefs.json")
+write(b,file=saveURL)
 
 # ------------------------- chart glmnet coefs ------------------------------------
 # game play status
