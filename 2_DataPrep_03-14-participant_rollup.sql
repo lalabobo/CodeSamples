@@ -169,8 +169,6 @@ gameId bigint
 ,xp  smallint
 ,minionsKilled smallint
 ,jungleMinionsKilled  smallint
-/*,dominionScore smallint
-,teamScore smallint*/
 ,rank  smallint
 ) as
 select gameId                    
@@ -341,10 +339,11 @@ select gameId
 ,xp                        
 ,minionsKilled             
 ,jungleMinionsKilled       
-/*,dominionScore             
-,teamScore     */             
-,case when @prev_value=gameId then @rank
-	 when @prev_value:=gameId then @rank:=@rank+1 end as `rank`
+,case when @prev_value=gameId then @rank   /* for the same gameId, take the same rank; otherwise, incremet rank by 1*/
+      when @prev_value:=gameId then @rank:=@rank+1 end as `rank`
 
-from lol.timeline_event_join_nameDate as a,(select @rank:= 0, @prev_value := NULL ) as b
+from lol.timeline_event_join_nameDate as a,(select @rank:= 0, @prev_value := NULL ) as b /* @rank := 0 is equivalent to 
+Declare @rank int;
+set @rank = 0;
+select @rank */
 order by gameId; 
