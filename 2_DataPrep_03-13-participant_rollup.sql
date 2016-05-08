@@ -1,6 +1,4 @@
-# 13 - join events to timeline /* cause NULL*/
-/* version, win, gameMInutes, gameMode, gameType, mapId, seasonId, championId, spell1Id, spell2Id,
-highestAchievedSeasonTier,role and lane have NULL and will be dealt in 03-1-TransParticipant.R */
+# 13 - join events to timeline /* can cause NULL because not every participant has event at each min*/
 /*drop table if exists lol.timeline_event_join_nameDate;*/
 create table lol.timeline_event_join_nameDate as
 select a.gameId, version, win,a.participantFrames
@@ -17,15 +15,12 @@ select a.gameId, version, win,a.participantFrames
 
 , IFNULL(Num_ItemPurchased,0) AS Num_ItemPurchased
 , IFNULL(Num_ItemSold,0) AS Num_ItemSold
-/*, IFNULL(Num_SkillLevelUp,0) as Num_SkillLevelUp*/
 , IFNULL(Num_MonsterKilled,0) AS Num_MonsterKilled
 , IFNULL(Num_Ward_Killed,0) AS Num_Ward_Killed
 , IFNULL(Num_Ward_Place,0) AS Num_Ward_Place
 , IFNULL(Num_KilledBld,0) AS Num_KilledBld
 , IFNULL(Num_KilledChamp,0) AS Num_KilledChamp
-, IFNULL(Num_Assisting_Player,0) AS Num_Assisting_Player
-/*, IFNULL(Num_Building_Killed,0) as Num_Building_Killed
-, IFNULL(KilledByPlayer,0) as KilledByPlayer, IFNULL(Num_Victim,0) as Num_Victim  */      
+, IFNULL(Num_Assisting_Player,0) AS Num_Assisting_Player   
 , IFNULL(skillSlot1,0) AS skillSlot1, IFNULL(skillSlot2,0) AS skillSlot2, IFNULL(skillSlot3,0) AS skillSlot3
 , IFNULL(skillSlot4,0) AS skillSlot4, a.position_x, a.position_y
 , b.position_x as champKilled_position_x,b.position_y as champKilled_position_y                                       
