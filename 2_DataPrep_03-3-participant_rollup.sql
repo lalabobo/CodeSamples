@@ -1,7 +1,7 @@
 # 03 - decompose string in column assistingParticipantIds
 /* extract those that have assisting players. It's likely that the column contains a string of participantId when 
 there are 1+ participants assisting. Need to decompose the string into single participantId  
-This table will later be attached in 06, only to capture who assist and die*/
+This table will later be attached in 09,10 & 11, only to capture who assist and die*/
 /*drop table if exists lol.timelineevents_nameDate_derive_temp;*/
 create table lol.timelineevents_nameDate_derive_temp (index gameIdFrames (gameId,participantFrames)) as 
 select gameId,participantFrames,`type`,itemId
