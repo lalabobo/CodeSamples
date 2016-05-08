@@ -277,21 +277,18 @@ timelineToParticipant<-function(startRank,batchSize,nameDate)
 						transposeTable[b+x,a+k%/%3]<-eval(parse(text=paste0("DT[DT$participantFrames>=",k-1,"&DT$participantFrames<=",k,"&DT$participantId==",x,"&DT$rank==",j,",","max(as.numeric(",colName,"),na.rm=TRUE)]")))
 					if (i %in% c(89:92,161)) # need to be avg
 						transposeTable[b+x,a+k%/%3]<-eval(parse(text=paste0("DT[DT$participantFrames>=",k-1,"&DT$participantFrames<=",k,"&DT$participantId==",x,"&DT$rank==",j,",","mean(as.numeric(",colName,"),na.rm=TRUE)]")))
-				#	if (i %in% c(128,129,131,133,135,137,139,141,143,144,146,148,150,152,154,156,157)) 	# need to be multiplied
-				#		transposeTable[b+x,a+k%/%2]<-eval(parse(text=paste0("DT[DT$participantFrames>=",k-1,"&DT$participantFrames<=",k,"&DT$participantId==",x,"&DT$rank==",j,",","prod(as.numeric(",colName,"),na.rm=TRUE)]")))
 					k<-k+3
 				}
 			}
 		}
 			b<-b+x
 	}
-	# write into the db========================
-	#return(transposeTable)
+	# write into the db
 	dbWriteTable(con,paste0("participant_rollup_",nameDate),transposeTable,append=TRUE) 
 	dbDisconnect(con)
 	print(paste0("Finished gameId rank from ",startRank," to ",startRank+batchSize-1))
 }
-#timelineToParticipant(startRank,1)
+
 
 
 # 2. read a sql file as a string
