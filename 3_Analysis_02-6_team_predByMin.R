@@ -24,6 +24,7 @@ library(RJSONIO)
 # 4. xgb cross validation & training
 # 5. glmnet cross validation & training
 # 6. model performance
+# 7. chart the coefficients over time
 
 
 
@@ -176,7 +177,7 @@ dataPrep<-function(data) # i is the numMin. We start from 1 rather than 4 is to 
     {
         data<-data[,-remove] 
     }
-    remove<-oneValue(data) # remove variabes that have one value
+    remove<-oneValue(data) # remove variables that have one value
     if (!is.na(remove[1])) # if the first one is NA, then there is no index added
     {
         data<-data[,-remove]
@@ -200,7 +201,7 @@ normalise<-function(predictors)
     predictors_scaled<-predict(preProcValues,predictors)
     #data_scaled<-predictors_scaled
     #data_scaled[,"response"]<-eval(parse(text=paste0("data$",respCol)))
-    print(paste0("Finished preparing the data."))
+    print(paste0("Finished normalising the data."))
     #return(data_scaled)
     return(predictors_scaled)
 }
@@ -294,6 +295,7 @@ quantile<-function(predictor,ntile)  # the predictor has to be continuous variab
     
 # 3.6 quantileAdj on one continuous variable
 # further adjust the borders of a level so any two levels don't share values
+# e.g., [1,1.5] & [1.5,2] => [1,1.46] & [1.5,2]
 quantileAdj<-function(predictor,ret)
 {
     groupBy<-data.frame(table(predictor)) # get the freq table
@@ -336,7 +338,7 @@ quantileAdj<-function(predictor,ret)
 }
     
 # 3.7 modiy min/max of a level for regrouping, including handling when the number of unique levels < ntile
-regroup<-function(predictor,ret,ntile)   # <--- is ret actually used here? This function seems to have problem
+regroup<-function(predictor,ret,ntile)   
 {
     uniVal<-sort(unique(predictor))  # return a sorted vector of values in the predictor
     l<-length(uniVal) # number of unique value of the ith predictor
@@ -446,6 +448,11 @@ regTrans<-function(predictors,ntile)
         print(paste0("Finished the ",i,"th predictor."))
      }
      # normalise after polytransfer and discretise
+     remove<-oneValue(newData) # remove variables that have one value
+     if (!is.na(remove[1])) # if the first one is NA, then there is no index added
+     {
+        newData<-newData[,-remove]
+     }
      newData<-normalise(newData)
      return(newData)
 }
@@ -454,7 +461,7 @@ regTrans<-function(predictors,ntile)
 
 
 # ---------------------------------- 4. xgb cross validation & training ---------------------
-# find the best eta
+# find the best eta through cross validation
 xgbcv<-function(xgbData)
 {
     ret<-data.frame(eta = NA, test.rmse.mean = NA, test.auc.mean = NA)
@@ -590,16 +597,17 @@ glmnetModel<-function(newData,bestAlpha,resp)
 
 
 # --------------------------------- 5. execute: model performance by min ---------------------------
-modelPerf<-function(data)  # including both glmnet and xgb
+modelPerf<-function()  # including both glmnet and xgb
 {
     # initiate a data frame to store xgb model performance
     ret_model<-data.frame(dataset = NA, Model = NA, train_mse = NA, train_auc = NA, test_mse = NA, test_auc = NA
                             , userTime = NA, systemTime = NA, elapsedTime = NA)
     
     ret_list<-list() # an overall list with [[1]]: ret_model, and [[2]] and more for each variable importance data frame
-    j<-17 # j is the pointer of ret rowNum
-    for(i in seq(from = 25, to = 31, by = 3))  # i indicates each min interval
+    j<-1 # j is the pointer of ret rowNum
+    for(i in seq(from = 1, to = 31, by = 3))  # i indicates each min interval
     {
+        print(paste0("Start with ",i,"th min."))
         if (i == 1) # only grab basic champ and game setup data
         {
             data<-dataBasicSetup()
@@ -611,6 +619,12 @@ modelPerf<-function(data)  # including both glmnet and xgb
             ret_model[j,1]<-paste0(i,"min")  
         }
         
+        # the dataPrep() includes:
+            # format(): format the dataset to only have numeric and factor
+            # checkFactor(): remove factors with >1024 levels
+            # oneValue(): remove variables that have one value
+            # impute NAs
+            # hasFactor(): check if there are still factors in the dataset
         data<-dataPrep(data)
         print(paste0("Finished loading data of the ",i,"th min."))
         
@@ -620,7 +634,7 @@ modelPerf<-function(data)  # including both glmnet and xgb
         predictors_scaled<-normalise(predictors)
         xgbData<-predictors_scaled
         xgbData[,"win"]<-data$win
-        bestEta<-xgbcv(xgbData)
+        bestEta<-xgbcv(xgbData)  # use cross validation to find the best Eta
         
         #train xgb using the best Eta. each byMin dataset would use its own bestEta
         xgb<-xgbModel(xgbData, bestEta)  # xgb would have two items in the list. [[1]] is the training stats; [[2]] is the model.
@@ -653,18 +667,26 @@ modelPerf<-function(data)  # including both glmnet and xgb
         j<-j+1 # move to the next row in ret_model to store stats for glmnet
         predictors<-data[,-which(colnames(data) %in% "win")]
         
-         # use xgb importance to select variables
-         impVar<-as.numeric(varImp.xgb$Feature)
-         glmnetPredictors<-predictors[,impVar]
+        # use xgb importance to select variables
+        impVar<-as.numeric(varImp.xgb$Feature)
+        glmnetPredictors<-predictors[,impVar]
          
         # transform predictors: poly, normalise, discretise
+            # polyTransform(): attach extra columns with poly transform
+            # quantile(): quantile a continuous variable by ntile
+            # quantileAdj():adjust the borders of a level so any two levels don't share values
+            # regroup(): modiy min/max of a level for regrouping, including handling when the number of unique levels < ntile and if a level has <5% volume
+            # discretise(): discretise a continuous variable based on the regrouping result
+            # normalise()
         newData<-regTrans(glmnetPredictors,10)
         newData[,"win"]<-data$win   
-        
+
         # glmnet tuning
         # find the appropriate alpha that an give the minimum error
+        print("Start glmnetcv().")
         bestAlpha<-glmnetcv(newData, "win") 
         # train the model with the bestAlpha
+        print("Start glmnetModel().")
         glmnetRet<-glmnetModel(newData,bestAlpha,"win")  # glmnetRet is a list, containing [[1]] training stats and [[2]] the model object
         # model result
         ret_model[j,1]<-ret_model[j-1,1]
@@ -834,8 +856,23 @@ glmnet_gamePlay[order(glmnet_gamePlay$min,glmnet_gamePlay$rank),]
 
 glmnet_impReady<-rbind(glmnet_gamePlay,glmnet_champ,glmnet_build)
 
+for(i in 1:nrow(glmnet_impReady))
+{
+    if (is.na(glmnet_impReady[i,'sign']))
+    {
+        glmnet_impReady[i,'coef']<-0
+    }
+    else if (glmnet_impReady[i,'sign'] == '+')
+    {
+        glmnet_impReady[i,'coef']<-glmnet_impReady$max.coef[i]
+    }
+    else glmnet_impReady[i,'coef']<-glmnet_impReady$min.coef[i]
+}
+
+glmnet_impFiltered<-filter(glmnet_impReady,variable_clean!='DIAMOND' & variable_clean != 'SILVER' & variable_clean != 'PLATINUM')
+
 # create a json file
-b<-jsonlite::toJSON(glmnet_impReady)  # ret[[1]] is the variable names (repeat)
+b<-jsonlite::toJSON(glmnet_impFiltered)  # ret[[1]] is the variable names (repeat)
 saveURL<-paste0("/usr/share/nginx/html/generated/chartJSON/data/game/glmnet_imp.json")
 write(b,file=saveURL)
 
