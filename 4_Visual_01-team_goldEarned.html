@@ -41,20 +41,19 @@
                             return '<p> Gold earned: ' + Math.round(data.point.x,0) + '</p>' +
                                     '<p> Win rate: ' + Math.round((data.point.y*100),2) + '%</p>' +
                                     '<p> Better than <strong>' + Math.round(data.point.p,2) + '</strong>% of games</p>';
-                          })
-            ;
+                          });
           
             chart.xAxis     //Chart x-axis settings
-                .axisLabel('Average Gold Earned per Minute')
-                .tickFormat(d3.format(',r'));
+                 .axisLabel('Average Gold Earned per Minute')
+                 .tickFormat(d3.format(',r')); // round up, e.g., 1000
           
             chart.yAxis     //Chart y-axis settings
-                .axisLabel('Probability of Winning a game (win rate)')
-                .tickFormat(d3.format('0%'));
+                 .axisLabel('Probability of Winning a game (win rate)')
+                 .tickFormat(d3.format('0%'));  // rounded%, e.g., 50%
           
-            /* Done setting the chart up? Time to render it!*/
+            
             // load the json data. It has to wrap everything that uses the data
-           d3.json("http://felicity.v1.pe/generated/chartJSON/data/goldEarned.json",function(d){
+           d3.json("http://felicity.v1.pe/generated/chartJSON/data/game/goldEarned.json",function(d){
             var avg_winrate = [];
             var your_avg = [];
             var opponent_avg = [];
