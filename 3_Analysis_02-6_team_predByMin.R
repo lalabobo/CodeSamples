@@ -826,7 +826,7 @@ glmnet_impFullRank<-merge(x = glmnet_impFullRank,y = glmnet_imp,by = c("min","va
 glmnet_impFullRank[is.na(glmnet_impFullRank$rank),"rank"]<-50 # default to 50 as the max is 42
 
 # because we can achieve the best prediction at 22th minute, we only chart until the 22th minute
-glmnet_imp22<-filter(glmnet_impFullRank,min <= 22 & (!is.na(min)))
+#glmnet_imp22<-filter(glmnet_impFullRank,min <= 22 & (!is.na(min)))
 
 variables_gamePlay<-c("totalGold","sum_level","minionsKilled","Num_deaths","Num_KilleDchamp",
             "PLATINUM","DIAMOND","Num_AssistChamp","jungleMinionsKilled","Num_MonsterKilled",
@@ -843,15 +843,19 @@ variables_build<-c("FlatMPRegenMod","FlatMovementSpeedMod","FlatPhysicalDamageMo
              "rFlatArmorPenetrationMod","tags_CriticalStrike","PercentSpellVampMod","FlatMPRegenMod",
              "tags_SpellBlock","tags_GoldPer","FlatCritDamageMod","tags_ArmorPenetration")
 
-glmnet_gamePlay<-filter(glmnet_imp22,variable_clean %in% variables_gamePlay)
-glmnet_champ<-filter(glmnet_imp22,variable_clean %in% variables_champ)
-glmnet_build<-filter(glmnet_imp22,variable_clean %in% variables_build)
+#glmnet_gamePlay<-filter(glmnet_imp22,variable_clean %in% variables_gamePlay)
+#glmnet_champ<-filter(glmnet_imp22,variable_clean %in% variables_champ)
+#glmnet_build<-filter(glmnet_imp22,variable_clean %in% variables_build)
+
+glmnet_gamePlay<-filter(glmnet_impFullRank,variable_clean %in% variables_gamePlay)
+glmnet_champ<-filter(glmnet_impFullRank,variable_clean %in% variables_champ)
+glmnet_build<-filter(glmnet_impFullRank,variable_clean %in% variables_build)
 
 glmnet_gamePlay[,"TypeOfVariable"]<-"Game Play"
 glmnet_champ[,"TypeOfVariable"]<-"Champion Attributes"
 glmnet_build[,"TypeOfVariable"]<-"Build"
 
-glmnet_gamePlay[order(glmnet_gamePlay$min,glmnet_gamePlay$rank),]
+glmnet_gamePlay<-glmnet_gamePlay[order(glmnet_gamePlay$min,glmnet_gamePlay$rank),]
 
 
 glmnet_impReady<-rbind(glmnet_gamePlay,glmnet_champ,glmnet_build)
@@ -884,7 +888,7 @@ s<-"ggplot() + "
 for (i in seq_along(variables_gamePlay))  # loop through the variable name
 {
      # draw a line for each variable in the list
-    l<-paste0("geom_line(data = filter(glmnet_imp22,variable_clean==variables_gamePlay[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables_gamePlay[",i,"]),size = 1) + ")
+    l<-paste0("geom_line(data = filter(glmnet_impFullRank,variable_clean==variables_gamePlay[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables_gamePlay[",i,"]),size = 1) + ")
     s<-paste0(s,l)
     
 }    
@@ -901,7 +905,7 @@ s<-"ggplot() + "
 for (i in seq_along(variables_champ))
 {
     # draw a line for each variable in the list
-    l<-paste0("geom_line(data = filter(glmnet_imp22,variable_clean==variables_champ[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables_champ[",i,"]),size = 1) + ")
+    l<-paste0("geom_line(data = filter(glmnet_impFullRank,variable_clean==variables_champ[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables_champ[",i,"]),size = 1) + ")
     s<-paste0(s,l)
 }    
 s<-paste0(s,"xlab(\"byMin\") +","ylab(\"rank\")")
@@ -916,7 +920,7 @@ dev.off()
 for (i in seq_along(variables_build))
 {
     # draw a line for each variable in the list
-    l<-paste0("geom_line(data = filter(glmnet_imp22,variable_clean==variables_build[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables_build[",i,"]),size = 1) + ")
+    l<-paste0("geom_line(data = filter(glmnet_impFullRank,variable_clean==variables_build[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables_build[",i,"]),size = 1) + ")
     s<-paste0(s,l)
 }    
 s<-paste0(s,"xlab(\"byMin\") +","ylab(\"rank\")")
@@ -973,10 +977,10 @@ xgb_impFullRank<-merge(x = xgb_impFullRank,y = xgb_imp,by = c("min","variable_cl
 xgb_impFullRank[is.na(xgb_impFullRank$rank),"rank"]<-50 # default to 50 as the max is 42
 
 # because we can achieve the best prediction at 22th minute, we only chart until the 22th minute
-xgb_imp22<-filter(xgb_impFullRank,min <= 22)
+#xgb_imp22<-filter(xgb_impFullRank,min <= 22)
 
 # create a json file
-b<-jsonlite::toJSON(xgb_imp22)  # ret[[1]] is the variable names (repeat)
+b<-jsonlite::toJSON(xgb_impFullRank)  # ret[[1]] is the variable names (repeat)
 saveURL<-paste0("/usr/share/nginx/html/generated/chartJSON/data/game/xgb_imp.json")
 write(b,file=saveURL)
 
@@ -992,7 +996,7 @@ s<-"ggplot() + "
 for (i in seq_along(variables))  # loop through the variable name
 {
      # draw a line for each variable in the list
-    l<-paste0("geom_line(data = filter(xgb_imp22,variable_clean==variables[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables[",i,"]),size = 1) + ")
+    l<-paste0("geom_line(data = filter(xgb_impFullRank,variable_clean==variables[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables[",i,"]),size = 1) + ")
     s<-paste0(s,l)
 }    
 s<-paste0(s,"xlab(\"byMin\") +","ylab(\"rank\")")
@@ -1015,7 +1019,7 @@ s<-"ggplot() + "
 for (i in seq_along(variables))
 {
     # draw a line for each variable in the list
-    l<-paste0("geom_line(data = filter(xgb_imp22,variable_clean==variables[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables[",i,"]),size = 1) + ")
+    l<-paste0("geom_line(data = filter(xgb_impFullRank,variable_clean==variables[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables[",i,"]),size = 1) + ")
     s<-paste0(s,l)
 }    
 s<-paste0(s,"xlab(\"byMin\") +","ylab(\"rank\")")
@@ -1036,7 +1040,7 @@ variables<-c("FlatMPRegenMod","FlatMovementSpeedMod","FlatPhysicalDamageMod","ta
 for (i in seq_along(variables))
 {
     # draw a line for each variable in the list
-    l<-paste0("geom_line(data = filter(xgb_imp22,variable_clean==variables[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables[",i,"]),size = 1) + ")
+    l<-paste0("geom_line(data = filter(xgb_impFullRank,variable_clean==variables[",i,"]),aes(x = min, y = rank,group = variable_clean,color=variables[",i,"]),size = 1) + ")
     s<-paste0(s,l)
 }    
 s<-paste0(s,"xlab(\"byMin\") +","ylab(\"rank\")")
