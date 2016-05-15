@@ -172,25 +172,18 @@ dataPrep<-function(data) # i is the numMin. We start from 1 rather than 4 is to 
 {
     data<-format(data) # format the dataset to only have numeric and factor
     
-    remove<-checkFactor(data) # remove factors with >1024 levels
-    if (!is.na(remove[1])) # if the first one is NA, then there is no index added
-    {
-        data<-data[,-remove] 
-    }
     remove<-oneValue(data) # remove variables that have one value
     if (!is.na(remove[1])) # if the first one is NA, then there is no index added
     {
         data<-data[,-remove]
     }
-    set.seed(12)
-    data<-na.roughfix(data) # impute NAs
     
     factor<-hasFactor(data) # check if there are still factors in the dataset
-    if (is.na(factor[,1]) || is.na(factor[,2]))
+    if (is.na(factor[,1]) || is.na(factor[,2]))  # expect to be NA to indicate no factors
     {
         return(data)
     }
-    else print("There are still factors after normalisation.")
+    else print("There are unexpected factors in the dataset.")
 }
 
 # 3.2 normalise variables
@@ -488,7 +481,7 @@ xgbcv<-function(xgbData)
         i<-i+1
     }
     print(ret)
-    bestEta<-filter(ret,test.auc.mean == max(ret$test.auc.mean))$eta # use the eta that has the largest auc, also this eta yield the smallest rmse
+    bestEta<-filter(ret,test.auc.mean == max(ret$test.rmse.mean))$eta # use the eta that has the largest auc, also this eta yield the smallest rmse
     return(bestEta)
 }
 
@@ -539,7 +532,7 @@ glmnetcv<-function(newData, resp)
     predictors<-as.matrix(newData[,-which(colnames(newData) %in% resp)])
     resp<-newData[,which(colnames(newData) %in% resp)]
     i<-1 # row pointer in ret
-    for (a in seq(from = 0, to = 1, by = 0.1))  # loop through different alpha
+    for (a in seq(from = 0, to = 1, by = 0.1))  # loop through different alpha. a = 1 lasso L1 (pick 1 drop the rest); a = 0 ridge L2 (similar coefficients)
     {
         cvfit<-cv.glmnet(x = predictors, y = resp, alpha = a, family = "binomial"
                          , nfold = 10, type.measure = "mse", parallel = T)
@@ -553,7 +546,7 @@ glmnetcv<-function(newData, resp)
         pred<-predict(cvfit,newx = predictors,s="lambda.min",type="response")
 
         ret[i,1]<-a
-        ret[i,2]<-cvfit$lambda.min
+        ret[i,2]<-cvfit$lambda.min  # lambda.min gives the min mean cv error
         ret[i,3]<-mean((data$win-pred)^2)
         ret[i,4]<-auc_adj(data$win,as.vector(pred))
         
@@ -622,10 +615,8 @@ modelPerf<-function()  # including both glmnet and xgb
         
         # the dataPrep() includes:
             # format(): format the dataset to only have numeric and factor
-            # checkFactor(): remove factors with >1024 levels
             # oneValue(): remove variables that have one value
-            # impute NAs
-            # hasFactor(): check if there are still factors in the dataset
+            # hasFactor(): check if there are factors in the dataset
         data<-dataPrep(data)
         print(paste0("Finished loading data of the ",i,"th min."))
         
@@ -684,7 +675,7 @@ modelPerf<-function()  # including both glmnet and xgb
             # polyTransform(): attach extra columns with poly transform
             # quantile(): quantile a continuous variable by ntile
             # quantileAdj():adjust the borders of a level so any two levels don't share values
-            # regroup(): modiy min/max of a level for regrouping, including handling when the number of unique levels < ntile and if a level has <5% volume
+            # regroup(): modify min/max of a level for regrouping, including handling when the number of unique levels < ntile and if a level has <5% volume
             # discretise(): discretise a continuous variable based on the regrouping result
             # normalise()
         newData<-regTrans(glmnetPredictors,10)
