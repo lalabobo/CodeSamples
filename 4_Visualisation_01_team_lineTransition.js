@@ -50,10 +50,8 @@ $(document).ready(function() { // wait for the page (i.e. html) fully loaded for
       return(label)
     }
 
-    c = unique(data,"TypeOfVariable"); // grab the unique values from TypeOfVariable column (e.g., game play, champion, build)
-    d = unique(data,"sign");
+    c = unique(data,"TypeOfVariable"); // grab the unique values from TypeOfVariable column (e.g., game play, champi
 
-    
     // change the filter button colours based on events
     function colourChange(elmId,trigger){
         if (trigger == 'click'){
@@ -75,8 +73,6 @@ $(document).ready(function() { // wait for the page (i.e. html) fully loaded for
     }
 
     initiateOption(c,'TypeOfVariable');
-//    initiateOption(d,'directionOption');
-    
     
     // -------------------------------- 4. apply the chain effect of filtering -------------------------
     // The chain effect of filtering is like this:
@@ -204,9 +200,6 @@ $(document).ready(function() { // wait for the page (i.e. html) fully loaded for
                              //        return '5 5';
                              //    }
                              //}
-                             
-                             console.log("d = " + d[0].sign);
-                             console.log(d[0].min)
                         })
                          .attr("fill","none")
                          .style('opacity', 1)
@@ -325,30 +318,6 @@ $(document).ready(function() { // wait for the page (i.e. html) fully loaded for
           });  
           
     
-/*    legend.append('button')
-          .attr({
-            class: 'legendNav',
-            id: 'legendPrev'
-            })
-          .attr('x', w - margin.right + legendMargin * 1.5)
-          .attr('y', margin.top)
-          .style('color','#3399CC')
-          .style('opacity',1)
-          .html('&#8743;');
-            
-    legend.append('button')
-          .attr({
-            class: 'legendNav',
-            id: 'legendNext'
-            })
-          .attr('x', w - margin.right + legendMargin * 1.5)
-          .attr('y', function(d, i) {
-              return margin.top * 1.5 + 14 * height;  // the place is long enough for showing 13 elements
-          })
-          .style('color','#3399CC')
-          .style('opacity',1)
-          .html('&#8744;');        
-*/    
         
     // 5.8 axis 
     // setup axis  
