@@ -1,4 +1,4 @@
-# 08 - aggregate timelineevent to one record per frame       
+# 08 - aggregate timelineevent to one frame/min per record       
 /* drop table if exists lol.timelineevents_item_nameDate_rollup;*/
  create table lol.timelineevents_item_nameDate_rollup (index gameIdParIdFrame (gameId,participantFrames,participantId)) as 
  select gameId,max(version) as version,max(win) as win,participantFrames
