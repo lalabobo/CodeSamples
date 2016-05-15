@@ -7,7 +7,7 @@ library(RMySQL)
 # This function prepare a table: a gameId with up to 10 participantId, with stats of every 3min as columns
 # Each row is a participant of a game, containing info of both during game playing and at the end of a game, as well as time series
 
-# 1. transpose aggregate attributes of each min to 3min interval 
+# 1. transpose aggregated attributes of each min to 3min interval 
 timelineToParticipant<-function(startRank,batchSize,nameDate)
 {
 	con<-dbConnect(MySQL(),user='hanmei',password='3322439',db='lol',host='127.0.0.1')
