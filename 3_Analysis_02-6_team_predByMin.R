@@ -464,9 +464,9 @@ regTrans<-function(predictors,ntile)
 # find the best eta through cross validation
 xgbcv<-function(xgbData)
 {
-    ret<-data.frame(eta = NA, test.rmse.mean = NA, test.auc.mean = NA)
+    ret<-data.frame(eta = NA, test.rmse.mean = NA, test.auc.mean = NA
+
     # use xgboost to select variables (speed improvement)
-    set.seed(17)
     
     predictors<-xgbData[,-which(colnames(xgbData) %in% "win")]
     resp<-xgbData$win
@@ -475,6 +475,7 @@ xgbcv<-function(xgbData)
     # use to tune parameters. When it stops, it will break loop so can't continue in a customised loop.
     # have to set prediction = T to be able to return a data table contins metrics for training and testing datasets
     i<-1 # row index of ret
+    set.seed(17)
     for(eta in seq(from = 0.1, to = 1, by = 0.1))
     {
         system.time(xgb_model<-xgb.cv(data=dataReady,nround=1000,nthread=4,nfold=5,prediction=T
@@ -629,14 +630,22 @@ modelPerf<-function()  # including both glmnet and xgb
         print(paste0("Finished loading data of the ",i,"th min."))
         
         # ----------------------- xgb cross validation & training -------------------
+        # set up the training and testing dataset
+        set.seed(29)
+        trainIndex<-createDataPartition(data$win,p=.8,list=F,time=1)
+        predictors_train<-data[trainIndex,-which(colnames(data) %in% "win")]
+        resp_train<-data[trainIndex,which(colnames(data) %in% "win")]
+
         # cross validation to find the best eta
+        xgbData_train<-normalise(predictors_train)
+        xgbData_train[,"win"]<-resp_train
+        bestEta<-xgbcv(xgbData_train)  # use cross validation to find the best Eta
+        
+        #train xgb using the best Eta. each byMin dataset would use its own bestEta
         predictors<-data[,-which(colnames(data) %in% "win")]
         predictors_scaled<-normalise(predictors)
         xgbData<-predictors_scaled
         xgbData[,"win"]<-data$win
-        bestEta<-xgbcv(xgbData)  # use cross validation to find the best Eta
-        
-        #train xgb using the best Eta. each byMin dataset would use its own bestEta
         xgb<-xgbModel(xgbData, bestEta)  # xgb would have two items in the list. [[1]] is the training stats; [[2]] is the model.
         # model result.
         ret_model[j,2]<-"xgb"
@@ -684,7 +693,10 @@ modelPerf<-function()  # including both glmnet and xgb
         # glmnet tuning
         # find the appropriate alpha that an give the minimum error
         print("Start glmnetcv().")
-        bestAlpha<-glmnetcv(newData, "win") 
+        set.seed(29)
+        trainIndex<-createDataPartition(newData$win,p=.8,list=F,time=1)
+        newData_train<-newData[trainIndex,]
+        bestAlpha<-glmnetcv(newData_train, "win") 
         # train the model with the bestAlpha
         print("Start glmnetModel().")
         glmnetRet<-glmnetModel(newData,bestAlpha,"win")  # glmnetRet is a list, containing [[1]] training stats and [[2]] the model object
